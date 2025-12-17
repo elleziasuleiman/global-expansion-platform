@@ -23,6 +23,12 @@ variable "tags" {
   }
 }
 
+variable "stage" {
+  type        = string
+  description = "The deployment stage (e.g., dev, staging, prod)."
+  default     = "prod"
+}
+
 # ==========================================
 # Storage Variables (S3 & DynamoDB)
 # ==========================================
