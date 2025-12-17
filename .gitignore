@@ -137,3 +137,13 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Ignore Terraform local files
+.terraform/
+*.tfstate
+*.tfvars
+
+# Ignore Node.js build artifacts
+node_modules/
+build/
+*.zip
