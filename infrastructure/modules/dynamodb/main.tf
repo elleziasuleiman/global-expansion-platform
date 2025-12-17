@@ -11,4 +11,8 @@ resource "aws_dynamodb_table" "this" {
   server_side_encryption {
     enabled = true
   }
+
+  point_in_time_recovery {
+    enabled = true
+  }
 }
