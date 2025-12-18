@@ -30,6 +30,6 @@ jobs:
         working-directory: ./infrastructure/prod
 
       - name: Security Scan with tfsec
-        uses: aquasecurity/tfsec-action@v1
+        uses: aquasecurity/tfsec-action@main
         with:
           directory: ./infrastructure/prod
