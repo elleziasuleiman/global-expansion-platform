@@ -1,0 +1,36 @@
+name: "Lambda Build Validation"
+
+on:
+  push:
+    branches: [ feature/base-gep-foundation ]
+  pull_request:
+
+jobs:
+  build-and-package:
+    name: "Build Node.js Lambda"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Dependencies
+        run: npm install
+        working-directory: ./services
+
+      - name: Run Build Script & Lint Check
+        working-directory: ./services
+        run: |
+         npm run lint || echo "No Lint script found"
+         npm run build 
+       
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-package
+          path: services/entity-management/build/handler.zip
+          retention-days: 1
