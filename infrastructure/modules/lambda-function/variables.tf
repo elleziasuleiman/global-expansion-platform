@@ -27,5 +27,28 @@ variable "role_arn" {
 variable "log_retention_days" {
   type = number
   description = "Number of days to retain CloudWatch Logs for this function's log group"
-  default = 7
+  default = 30
+}
+
+variable "dlq_target_arn" {
+  type    = string
+  default = ""
+  description = "Optional ARN for DLQ (SNS/SQS) for Lambda"
+}
+
+variable "reserved_concurrent_executions" {
+  type    = number
+  default = 0
+  description = "Function-level reserved concurrency (0 = unset)"
+}
+
+variable "enable_tracing" {
+  type    = bool
+  default = true
+}
+
+variable "logs_kms_key_arn" {
+  type    = string
+  default = ""
+  description = "Optional KMS key ARN to encrypt CloudWatch Logs"
 }

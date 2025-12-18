@@ -6,9 +6,23 @@ resource "aws_lambda_function" "this" {
   role          = var.role_arn
   source_code_hash = filebase64sha256(var.filename)
   depends_on = [aws_cloudwatch_log_group.this]
+
+  tracing_config {
+    mode = var.enable_tracing ? "Active" : "PassThrough"
+  }
+
+  dynamic "dead_letter_config" {
+    for_each = var.dlq_target_arn == "" ? [] : [var.dlq_target_arn]
+    content {
+      target_arn = dead_letter_config.value
+    }
+  }
+
+  reserved_concurrent_executions = var.reserved_concurrent_executions == 0 ? null : var.reserved_concurrent_executions
 }
 
 resource "aws_cloudwatch_log_group" "this" {
   name = "/aws/lambda/${var.function_name}"
   retention_in_days = var.log_retention_days
+  kms_key_id = var.logs_kms_key_arn == "" ? null : var.logs_kms_key_arn
 }

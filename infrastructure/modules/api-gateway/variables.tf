@@ -20,3 +20,39 @@ variable "lambda_function_name" {
   type        = string
   description = "The name of the Lambda function to grant permissions to."
 }
+
+variable "authorization" {
+  type    = string
+  default = "AWS_IAM"
+  description = "Authorization type for methods (e.g. NONE, AWS_IAM, CUSTOM, COGNITO_USER_POOLS)"
+}
+
+variable "enable_access_logs" {
+  type    = bool
+  default = true
+}
+
+variable "access_log_retention_days" {
+  type    = number
+  default = 365
+}
+
+variable "cache_cluster_enabled" {
+  type    = bool
+  default = true
+}
+
+variable "cache_cluster_size" {
+  type    = string
+  default = "0.5"
+}
+
+variable "enable_tracing" {
+  type    = bool
+  default = true
+}
+
+variable "enable_client_certificate" {
+  type    = bool
+  default = false
+}

@@ -1,6 +1,10 @@
 resource "aws_api_gateway_rest_api" "this" {
   name        = var.api_name
   description = "GEP Platform API for Entity Management"
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_api_gateway_resource" "proxy" {
@@ -9,11 +13,19 @@ resource "aws_api_gateway_resource" "proxy" {
   path_part   = "{proxy+}"
 }
 
+resource "aws_api_gateway_request_validator" "this" {
+  name                        = "validate-body-and-params"
+  rest_api_id                 = aws_api_gateway_rest_api.this.id
+  validate_request_body       = true
+  validate_request_parameters = true
+}
+
 resource "aws_api_gateway_method" "proxy" {
-  rest_api_id   = aws_api_gateway_rest_api.this.id
-  resource_id   = aws_api_gateway_resource.proxy.id
-  http_method   = "ANY"
-  authorization = "NONE"
+  rest_api_id       = aws_api_gateway_rest_api.this.id
+  resource_id       = aws_api_gateway_resource.proxy.id
+  http_method       = "ANY"
+  authorization     = var.authorization
+  request_validator_id = aws_api_gateway_request_validator.this.id
 }
 
 resource "aws_api_gateway_integration" "lambda" {
@@ -21,7 +33,7 @@ resource "aws_api_gateway_integration" "lambda" {
   resource_id = aws_api_gateway_method.proxy.resource_id
   http_method = aws_api_gateway_method.proxy.http_method
 
-  integration_http_method = "POST" 
+  integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = var.lambda_invoke_arn
 }
@@ -44,11 +56,34 @@ resource "aws_api_gateway_deployment" "this" {
   depends_on = [aws_api_gateway_integration.lambda]
 }
 
+resource "aws_cloudwatch_log_group" "access" {
+  name              = "/aws/apigateway/${var.api_name}-${var.stage}-access"
+  retention_in_days = var.access_log_retention_days
+}
+
+resource "aws_api_gateway_client_certificate" "this" {
+  count       = var.enable_client_certificate ? 1 : 0
+  description = "Generated client certificate (optional)"
+}
 
 resource "aws_api_gateway_stage" "this" {
   deployment_id = aws_api_gateway_deployment.this.id
   rest_api_id   = aws_api_gateway_rest_api.this.id
   stage_name    = var.stage
+
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.access.arn
+    format = <<FORMAT
+{ "requestId":"$context.requestId", "ip":"$context.identity.sourceIp", "caller":"$context.identity.caller", "user":"$context.identity.user", "requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod", "resourcePath":"$context.resourcePath", "status":"$context.status" }
+FORMAT
+  }
+
+  cache_cluster_enabled = var.cache_cluster_enabled
+  cache_cluster_size    = var.cache_cluster_size
+
+  tracing_enabled = var.enable_tracing
+
+  client_certificate_id = var.enable_client_certificate ? aws_api_gateway_client_certificate.this[0].id : null
 }
 
 resource "aws_lambda_permission" "apigw" {
@@ -56,5 +91,5 @@ resource "aws_lambda_permission" "apigw" {
   action        = "lambda:InvokeFunction"
   function_name = var.lambda_function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn = "${aws_api_gateway_rest_api.this.execution_arn}/*/*"
+  source_arn    = "${aws_api_gateway_rest_api.this.execution_arn}/*/*"
 }

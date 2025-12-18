@@ -15,7 +15,7 @@ hash_key               = "id"
 
 # Compute (Lambda) Configuration
 lambda_name            = "gep-entity-management-service"
-lambda_zip             = "services/entity-management/build/handler.zip"
+lambda_zip             = "../../services/entity-management/build/handler.zip"
 lambda_handler         = "index.handler"
 lambda_runtime         = "nodejs22.x"
 
