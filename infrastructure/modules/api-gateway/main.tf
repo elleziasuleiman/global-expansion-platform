@@ -124,12 +124,20 @@ resource "aws_api_gateway_method_settings" "this" {
   method_path = "*/*"
 
   settings {
-    metrics_enabled      = true
-    logging_level        = "INFO"
-    data_trace_enabled   = true
-    # Fix for CKV_AWS_225
+    # Logging and Metrics
+    metrics_enabled    = true
+    logging_level      = "INFO"
+    data_trace_enabled = true
+
+    # Caching (Fix for CKV_AWS_225)
     caching_enabled      = true
     cache_ttl_in_seconds = 300
+    
+    # Cache Security (Fix for CKV_AWS_308)
     cache_data_encrypted = true
+
+    # Throttling (Recommended for production-grade)
+    throttling_burst_limit = 500
+    throttling_rate_limit  = 1000
   }
 }
