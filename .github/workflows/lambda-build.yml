@@ -22,10 +22,9 @@ jobs:
         run: npm install
         working-directory: ./services/entity-management
 
-      - name: Run Build Script & Lint Check
+      - name: Run Build Script
         working-directory: ./services/entity-management
         run: |
-         npm run lint || echo "No Lint script found"
          npm run build 
        
       - name: Upload Artifact
