@@ -29,8 +29,8 @@ jobs:
         run: terraform validate
         working-directory: ./infrastructure/prod
 
-      - name: Install security scan tfsec
-        run: curl -sSL https://raw.githubusercontent.com/aquasecurity/tfsec/main/scripts/install_tfsec.sh | bash
-
-      - name: Run tfsec security scan
-        run: tfsec ./infrastructure/prod
+      - name: Security Scan (Checkov)
+        uses: bridgecrewio/checkov-action@master
+        with:
+          framework: terraform
+          soft_fail: false
