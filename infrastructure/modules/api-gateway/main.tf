@@ -79,19 +79,24 @@ resource "aws_api_gateway_stage" "this" {
 FORMAT
   }
 
-  method_settings {
-    method_path     = "*/*"
-    logging_level   = "INFO"
-    data_trace_enabled = true
-    metrics_enabled = true
-  }
-
   cache_cluster_enabled = var.cache_cluster_enabled
   cache_cluster_size    = var.cache_cluster_size
 
   xray_tracing_enabled = var.enable_tracing
 
   client_certificate_id = var.enable_client_certificate ? aws_api_gateway_client_certificate.this[0].id : null
+}
+
+resource "aws_api_gateway_method_settings" "this" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  stage_name  = aws_api_gateway_stage.this.stage_name
+
+  method_settings {
+    method_path        = "*/*"
+    metrics_enabled    = true
+    logging_level      = "INFO"
+    data_trace_enabled = true
+  }
 }
 
 data "aws_caller_identity" "current" {}
