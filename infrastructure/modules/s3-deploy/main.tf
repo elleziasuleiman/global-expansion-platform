@@ -25,6 +25,46 @@ resource "aws_s3_bucket" "this" {
   tags   = var.tags
 }
 
+# Access log target bucket for this deployment bucket
+resource "aws_s3_bucket" "access_logs" {
+  bucket = "${var.bucket_name}-access-logs"
+  tags   = var.tags
+}
+
+resource "aws_s3_bucket_logging" "this" {
+  bucket        = aws_s3_bucket.this.id
+  target_bucket = aws_s3_bucket.access_logs.id
+  target_prefix = "access-logs/"
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "this" {
+  bucket = aws_s3_bucket.this.id
+
+  rule {
+    id     = "expire-objects"
+    status = "Enabled"
+
+    expiration {
+      days = 365
+    }
+  }
+}
+
+resource "aws_sns_topic" "s3_events" {
+  name = "${var.bucket_name}-events"
+}
+
+resource "aws_s3_bucket_notification" "this" {
+  bucket = aws_s3_bucket.this.id
+
+  topic {
+    topic_arn = aws_sns_topic.s3_events.arn
+    events    = ["s3:ObjectCreated:*"]
+  }
+
+  depends_on = [aws_s3_bucket_logging.this]
+}
+
 resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
   bucket = aws_s3_bucket.this.id
 

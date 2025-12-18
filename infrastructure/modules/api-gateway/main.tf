@@ -79,6 +79,13 @@ resource "aws_api_gateway_stage" "this" {
 FORMAT
   }
 
+  method_settings {
+    method_path     = "*/*"
+    logging_level   = "INFO"
+    data_trace_enabled = true
+    metrics_enabled = true
+  }
+
   cache_cluster_enabled = var.cache_cluster_enabled
   cache_cluster_size    = var.cache_cluster_size
 
