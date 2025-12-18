@@ -11,6 +11,13 @@ resource "aws_lambda_function" "this" {
     mode = var.enable_tracing ? "Active" : "PassThrough"
   }
 
+  code_signing_config_arn = var.code_signing_config_arn == "" ? null : var.code_signing_config_arn
+
+  vpc_config {
+    subnet_ids         = var.vpc_subnet_ids
+    security_group_ids = var.vpc_security_group_ids
+  }
+
   dynamic "dead_letter_config" {
     for_each = var.dlq_target_arn == "" ? [] : [var.dlq_target_arn]
     content {

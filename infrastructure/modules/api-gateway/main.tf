@@ -59,6 +59,7 @@ resource "aws_api_gateway_deployment" "this" {
 resource "aws_cloudwatch_log_group" "access" {
   name              = "/aws/apigateway/${var.api_name}-${var.stage}-access"
   retention_in_days = var.access_log_retention_days
+  kms_key_id        = aws_kms_key.apigw.arn
 }
 
 resource "aws_api_gateway_client_certificate" "this" {
@@ -81,7 +82,31 @@ FORMAT
   cache_cluster_enabled = var.cache_cluster_enabled
   cache_cluster_size    = var.cache_cluster_size
 
+  tracing_enabled = var.enable_tracing
+
   client_certificate_id = var.enable_client_certificate ? aws_api_gateway_client_certificate.this[0].id : null
+}
+
+data "aws_caller_identity" "current" {}
+
+resource "aws_kms_key" "apigw" {
+  description             = "KMS key for API Gateway access logs"
+  deletion_window_in_days = 30
+  enable_key_rotation     = true
+  tags                    = var.tags
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = { AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root" }
+        Action = "kms:*"
+        Resource = "*"
+      }
+    ]
+  })
 }
 
 resource "aws_lambda_permission" "apigw" {

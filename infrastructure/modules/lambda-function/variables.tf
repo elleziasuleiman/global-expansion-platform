@@ -52,3 +52,21 @@ variable "logs_kms_key_arn" {
   default = ""
   description = "Optional KMS key ARN to encrypt CloudWatch Logs"
 }
+
+variable "code_signing_config_arn" {
+  type        = string
+  description = "Optional Code Signing Config ARN for Lambda"
+  default     = ""
+}
+
+variable "vpc_subnet_ids" {
+  type        = list(string)
+  description = "List of subnet ids for Lambda VPC configuration"
+  default     = []
+}
+
+variable "vpc_security_group_ids" {
+  type        = list(string)
+  description = "List of security group ids for Lambda VPC configuration"
+  default     = []
+}
