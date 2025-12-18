@@ -20,7 +20,7 @@ jobs:
 
       - name: Install Dependencies
         run: npm install
-        working-directory: ./services
+        working-directory: ./services/entity-management
 
       - name: Run Build Script & Lint Check
         working-directory: ./services
