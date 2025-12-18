@@ -56,3 +56,9 @@ variable "enable_client_certificate" {
   type    = bool
   default = false
 }
+
+variable "tags" {
+  type    = map(string)
+  default = {}
+  description = "Tags to apply to created resources"
+}
