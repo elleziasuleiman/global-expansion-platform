@@ -23,7 +23,7 @@ jobs:
         working-directory: ./services/entity-management
 
       - name: Run Build Script & Lint Check
-        working-directory: ./services
+        working-directory: ./services/entity-management
         run: |
          npm run lint || echo "No Lint script found"
          npm run build 
