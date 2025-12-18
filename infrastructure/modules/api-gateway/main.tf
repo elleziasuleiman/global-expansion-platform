@@ -87,19 +87,6 @@ FORMAT
   client_certificate_id = var.enable_client_certificate ? aws_api_gateway_client_certificate.this[0].id : null
 }
 
-resource "aws_api_gateway_method_settings" "this" {
-  rest_api_id = aws_api_gateway_rest_api.this.id
-  stage_name  = aws_api_gateway_stage.this.stage_name
-  # Change: This argument is required outside the settings block
-  method_path = "*/*" 
-
-  settings {
-    metrics_enabled    = true
-    logging_level      = "INFO"
-    data_trace_enabled = true
-  }
-}
-
 data "aws_caller_identity" "current" {}
 
 resource "aws_kms_key" "apigw" {
