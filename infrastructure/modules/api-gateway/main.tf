@@ -82,7 +82,7 @@ FORMAT
   cache_cluster_enabled = var.cache_cluster_enabled
   cache_cluster_size    = var.cache_cluster_size
 
-  tracing_enabled = var.enable_tracing
+  xray_tracing_enabled = var.enable_tracing
 
   client_certificate_id = var.enable_client_certificate ? aws_api_gateway_client_certificate.this[0].id : null
 }
