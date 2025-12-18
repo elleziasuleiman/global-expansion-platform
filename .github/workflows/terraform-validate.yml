@@ -29,7 +29,8 @@ jobs:
         run: terraform validate
         working-directory: ./infrastructure/prod
 
-      - name: Security Scan with tfsec
-        uses: aquasecurity/tfsec-action@main
-        with:
-          directory: ./infrastructure/prod
+      - name: Install security scan tfsec
+        run: curl -sSL https://raw.githubusercontent.com/aquasecurity/tfsec/main/scripts/install_tfsec.sh | bash
+
+      - name: Run tfsec security scan
+        run: tfsec ./infrastructure/prod
