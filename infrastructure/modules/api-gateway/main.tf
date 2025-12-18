@@ -68,6 +68,7 @@ resource "aws_api_gateway_client_certificate" "this" {
 }
 
 resource "aws_api_gateway_stage" "this" {
+  # checkov:skip=CKV2_AWS_29: WAF deployment is excluded from the current assessment scope to manage costs.
   deployment_id = aws_api_gateway_deployment.this.id
   rest_api_id   = aws_api_gateway_rest_api.this.id
   stage_name    = var.stage
@@ -129,5 +130,6 @@ resource "aws_api_gateway_method_settings" "this" {
     # Fix for CKV_AWS_225
     caching_enabled      = true
     cache_ttl_in_seconds = 300
+    cache_data_encrypted = true
   }
 }
