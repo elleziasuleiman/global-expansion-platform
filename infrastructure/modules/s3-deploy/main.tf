@@ -1,5 +1,10 @@
+# ==========================================
+# GEP Platform - S3 Deployment Module
+# ==========================================
+
 data "aws_caller_identity" "current" {}
 
+# --- Security: KMS Key for Encryption ---
 resource "aws_kms_key" "s3" {
   description             = "KMS key for S3 bucket server-side encryption"
   deletion_window_in_days = 30
@@ -10,61 +15,31 @@ resource "aws_kms_key" "s3" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid = "Enable IAM User Permissions"
-        Effect = "Allow"
+        Sid       = "Enable IAM User Permissions"
+        Effect    = "Allow"
         Principal = { AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root" }
-        Action = "kms:*"
-        Resource = "*"
+        Action    = "kms:*"
+        Resource  = "*"
       }
     ]
   })
 }
 
+# --- Resource: Main Deployment Bucket ---
 resource "aws_s3_bucket" "this" {
   bucket = var.bucket_name
   tags   = var.tags
 }
 
-# Access log target bucket for this deployment bucket
-resource "aws_s3_bucket" "access_logs" {
-  bucket = "${var.bucket_name}-access-logs"
-  tags   = var.tags
-}
-
-resource "aws_s3_bucket_logging" "this" {
-  bucket        = aws_s3_bucket.this.id
-  target_bucket = aws_s3_bucket.access_logs.id
-  target_prefix = "access-logs/"
-}
-
-resource "aws_s3_bucket_lifecycle_configuration" "this" {
+# Fix for CKV_AWS_21: Enable Versioning
+resource "aws_s3_bucket_versioning" "this" {
   bucket = aws_s3_bucket.this.id
-
-  rule {
-    id     = "expire-objects"
+  versioning_configuration {
     status = "Enabled"
-
-    expiration {
-      days = 365
-    }
   }
 }
 
-resource "aws_sns_topic" "s3_events" {
-  name = "${var.bucket_name}-events"
-}
-
-resource "aws_s3_bucket_notification" "this" {
-  bucket = aws_s3_bucket.this.id
-
-  topic {
-    topic_arn = aws_sns_topic.s3_events.arn
-    events    = ["s3:ObjectCreated:*"]
-  }
-
-  depends_on = [aws_s3_bucket_logging.this]
-}
-
+# Fix for CKV_AWS_145: Server-Side Encryption
 resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
   bucket = aws_s3_bucket.this.id
 
@@ -76,13 +51,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
   }
 }
 
-resource "aws_s3_bucket_versioning" "this" {
-  bucket = aws_s3_bucket.this.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
+# Fix for CKV2_AWS_6: Public Access Block
 resource "aws_s3_bucket_public_access_block" "this" {
   bucket = aws_s3_bucket.this.id
 
@@ -90,4 +59,95 @@ resource "aws_s3_bucket_public_access_block" "this" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+}
+
+# Fix for CKV_AWS_300: Lifecycle & Multipart Upload Cleanup
+resource "aws_s3_bucket_lifecycle_configuration" "this" {
+  bucket = aws_s3_bucket.this.id
+
+  rule {
+    id     = "expire-and-abort"
+    status = "Enabled"
+
+    expiration {
+      days = 365
+    }
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+}
+
+# --- Resource: Access Logs Target Bucket ---
+resource "aws_s3_bucket" "access_logs" {
+  bucket = "${var.bucket_name}-access-logs"
+  tags   = var.tags
+}
+
+# Hardening for Access Logs Bucket (Required to pass Checkov)
+resource "aws_s3_bucket_versioning" "access_logs" {
+  bucket = aws_s3_bucket.access_logs.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "access_logs" {
+  bucket = aws_s3_bucket.access_logs.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.s3.arn
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "access_logs" {
+  bucket = aws_s3_bucket.access_logs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "access_logs" {
+  bucket = aws_s3_bucket.access_logs.id
+
+  rule {
+    id     = "cleanup-old-logs"
+    status = "Enabled"
+
+    expiration {
+      days = 365
+    }
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+}
+
+# --- Logging & Notifications ---
+resource "aws_s3_bucket_logging" "this" {
+  bucket        = aws_s3_bucket.this.id
+  target_bucket = aws_s3_bucket.access_logs.id
+  target_prefix = "access-logs/"
+}
+
+resource "aws_sns_topic" "s3_events" {
+  name              = "${var.bucket_name}-events"
+  # Fix for CKV_AWS_26: SNS Encryption
+  kms_master_key_id = "alias/aws/sns"
+}
+
+resource "aws_s3_bucket_notification" "this" {
+  bucket = aws_s3_bucket.this.id
+
+  topic {
+    topic_arn = aws_sns_topic.s3_events.arn
+    events    = ["s3:ObjectCreated:*"]
+  }
+
+  depends_on = [aws_s3_bucket_logging.this]
 }

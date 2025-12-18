@@ -29,6 +29,12 @@ variable "stage" {
   default     = "prod"
 }
 
+variable "log_retention_days" {
+  type        = number
+  description = "The number of days to retain Lambda and API Gateway logs. Must be at least 365 for compliance."
+  default     = 365
+}
+
 # ==========================================
 # Storage Variables (S3 & DynamoDB)
 # ==========================================
