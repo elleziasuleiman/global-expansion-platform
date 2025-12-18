@@ -127,7 +127,7 @@ resource "aws_api_gateway_method_settings" "this" {
     # Logging and Metrics
     metrics_enabled    = true
     logging_level      = "INFO"
-    data_trace_enabled = true
+    data_trace_enabled = false
 
     # Caching (Fix for CKV_AWS_225)
     caching_enabled      = true
