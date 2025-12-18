@@ -13,3 +13,9 @@ variable "tags" {
   description = "A map of tags to assign to the resource for billing and management."
   default     = {}
 }
+
+variable "kms_key_description" {
+  type        = string
+  description = "Description for the KMS key used to encrypt the DynamoDB table"
+  default     = "DynamoDB table CMK"
+}
