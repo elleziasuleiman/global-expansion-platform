@@ -76,3 +76,9 @@ variable "environment" {
   type        = map(string)
   default     = {}
 }
+
+variable "environment_kms_key_arn" {
+  description = "Optional KMS Key ARN to encrypt Lambda environment variables. If empty and environment vars exist, a KMS key will be created."
+  type        = string
+  default     = ""
+}
