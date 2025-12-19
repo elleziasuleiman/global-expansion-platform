@@ -44,11 +44,37 @@ resource "aws_cloudwatch_log_group" "this" {
   kms_key_id = var.logs_kms_key_arn == "" ? null : var.logs_kms_key_arn
 }
 
+data "aws_caller_identity" "current" {}
+
+locals {
+  kms_policy = jsonencode({
+    Version = "2012-10-17"
+    Id      = "key-policy-${var.function_name}"
+    Statement = [
+      {
+        Sid = "Allow administration by account root"
+        Effect = "Allow"
+        Principal = { AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root" }
+        Action = "kms:*"
+        Resource = "*"
+      },
+      {
+        Sid = "Allow Lambda role use"
+        Effect = "Allow"
+        Principal = { AWS = var.role_arn }
+        Action = ["kms:Encrypt", "kms:Decrypt", "kms:GenerateDataKey*", "kms:DescribeKey"]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 resource "aws_kms_key" "env" {
   count               = var.environment_kms_key_arn == "" && length(keys(var.environment)) > 0 ? 1 : 0
   description         = "KMS key for encrypting Lambda environment variables for ${var.function_name}"
   deletion_window_in_days = 30
   enable_key_rotation = true
+  policy = local.kms_policy
 }
 
 resource "aws_kms_alias" "env_alias" {
