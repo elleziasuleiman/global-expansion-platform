@@ -6,6 +6,10 @@ resource "aws_lambda_function" "this" {
   role          = var.role_arn
   source_code_hash = filebase64sha256(var.filename)
   depends_on = [aws_cloudwatch_log_group.this]
+  
+  environment {
+    variables = length(keys(var.environment)) == 0 ? null : var.environment
+  }
 
   tracing_config {
     mode = var.enable_tracing ? "Active" : "PassThrough"

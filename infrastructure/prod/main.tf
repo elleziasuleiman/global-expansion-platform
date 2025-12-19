@@ -25,6 +25,10 @@ module "app_lambda" {
   runtime       = var.lambda_runtime
   role_arn      = module.lambda_role.role_arn
   log_retention_days = var.log_retention_days
+  environment = {
+    LOG_FORMAT = "JSON"
+    LOG_LEVEL  = "INFO"
+  }
   depends_on = [module.lambda_role, module.app_table]
 }
 
@@ -36,4 +40,14 @@ module "api_gateway" {
   lambda_invoke_arn    = module.app_lambda.invoke_arn
   lambda_function_name = module.app_lambda.function_name
   access_log_retention_days = var.log_retention_days
+}
+
+module "monitoring" {
+  source        = "../modules/monitoring"
+  function_name = module.app_lambda.function_name
+  api_name      = "gep-api-prod"
+  stage         = "prod"
+  region        = var.region
+  table_name    = module.app_table.table_name
+  depends_on    = [module.app_lambda, module.api_gateway, module.app_table]
 }

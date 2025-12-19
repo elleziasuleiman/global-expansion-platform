@@ -70,3 +70,9 @@ variable "vpc_security_group_ids" {
   description = "List of security group ids for Lambda VPC configuration"
   default     = []
 }
+
+variable "environment" {
+  description = "Environment variables to set on the Lambda function"
+  type        = map(string)
+  default     = {}
+}
