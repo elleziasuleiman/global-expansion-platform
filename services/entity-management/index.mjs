@@ -9,12 +9,12 @@ export const handler = async (event) => {
   const { httpMethod, resource } = event;
   logEvent("Request received", { method: httpMethod, path: resource });
 
-  if (resource === "/items") {
+  if (resource === "/entities") {
     if (httpMethod === "POST") return await createHandler(event);
     if (httpMethod === "GET") return await listHandler(event);
   }
   
-  if (resource === "/items/{id}") {
+  if (resource === "/entities/{id}") {
     if (httpMethod === "GET") return await getHandler(event);
     if (httpMethod === "PUT") return await updateHandler(event);
     if (httpMethod === "DELETE") return await deleteHandler(event);

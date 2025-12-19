@@ -13,6 +13,7 @@ export const createResponse = (statusCode, body) => {
 export const logEvent = (message, data = {}) => {
   console.log(JSON.stringify({
     timestamp: new Date().toISOString(),
+    platform: "GEP-Entity-Management", 
     message,
     ...data
   }));
