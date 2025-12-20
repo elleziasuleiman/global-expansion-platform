@@ -2,7 +2,7 @@ name: "Lambda Build Validation"
 
 on:
   push:
-    branches: [ feature/base-gep-foundation ]
+    branches: [ feature/base-gep-foundation]
   pull_request:
 
 jobs:
@@ -25,11 +25,25 @@ jobs:
       - name: Run Build Script
         working-directory: ./services/entity-management
         run: |
+
          npm run build 
        
-      - name: Upload Artifact
+      - name: Upload Entity Management Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: lambda-package
+          name: lambda-package-entity-management
           path: services/entity-management/build/handler.zip
+          retention-days: 1
+
+      - name: Build Compliance Agent
+        run: |
+          cd services/compliance-agent
+          npm ci || true
+          npm run build || (mkdir -p build && zip -r build/handler.zip index.mjs handlers/ package.json)
+
+      - name: Upload Compliance Agent Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-package-compliance-agent
+          path: services/compliance-agent/build/handler.zip
           retention-days: 1

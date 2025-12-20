@@ -18,3 +18,9 @@ variable "dynamodb_table_arn" {
   type        = string
   description = "The ARN of the DynamoDB table this role should have access to."
 }
+
+variable "sns_topic_arn" {
+  type        = string
+  description = "Optional SNS topic ARN that the role should be allowed to publish to"
+  default     = ""
+}

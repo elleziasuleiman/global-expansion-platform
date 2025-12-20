@@ -19,20 +19,26 @@ resource "aws_iam_role_policy_attachment" "basic_execution" {
 resource "aws_iam_role_policy" "dynamodb_access" {
   name = "${var.service_name}-dynamodb-policy"
   role = aws_iam_role.this.id
-
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "dynamodb:PutItem",
-        "dynamodb:GetItem",
-        "dynamodb:UpdateItem",
-        "dynamodb:DeleteItem",
-        "dynamodb:Query",
-        "dynamodb:Scan"
-      ]
-      Resource = var.dynamodb_table_arn
-    }]
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:PutItem",
+          "dynamodb:GetItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:Scan"
+        ]
+        Resource = var.dynamodb_table_arn
+      },
+      {
+        Effect = "Allow"
+        Action = ["sns:Publish"]
+        Resource = var.sns_topic_arn == "" ? "*" : var.sns_topic_arn
+      }
+    ]
   })
 }

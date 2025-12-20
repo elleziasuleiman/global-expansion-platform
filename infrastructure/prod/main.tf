@@ -14,6 +14,7 @@ module "lambda_role" {
   source             = "../modules/iam"
   service_name       = "gep-lambda"
   dynamodb_table_arn = module.app_table.table_arn 
+  sns_topic_arn      = aws_sns_topic.compliance_alerts.arn
   tags               = var.tags
 }
 
@@ -50,4 +51,36 @@ module "monitoring" {
   region        = var.region
   table_name    = module.app_table.table_name
   depends_on    = [module.app_lambda, module.api_gateway, module.app_table]
+}
+
+resource "aws_sns_topic" "compliance_alerts" {
+  name = "gep-compliance-alerts-${var.stage}"
+  # checkov:skip=CKV_AWS_26: using default SNS key for topic in this scope
+}
+
+module "compliance_lambda" {
+  source = "../modules/lambda-function"
+  function_name = "gep-compliance-agent-${var.stage}"
+  filename = var.compliance_agent_zip
+  handler = "index.handler"
+  runtime = "nodejs22.x"
+  role_arn = module.lambda_role.role_arn
+  log_retention_days = var.log_retention_days
+  environment = {
+    LOG_FORMAT = "JSON"
+    LOG_LEVEL  = "INFO"
+    ENTITY_TABLE = module.app_table.table_name
+    SNS_TOPIC_ARN = aws_sns_topic.compliance_alerts.arn
+  }
+  depends_on = [module.lambda_role, module.app_table]
+}
+
+module "compliance_scheduler" {
+  source = "../modules/eventbridge"
+  compliance_agent_lambda_arn = module.compliance_lambda.invoke_arn
+  compliance_agent_name = module.compliance_lambda.function_name
+  schedule_expression = "rate(1 day)"
+  stage = var.stage
+  tags = var.tags
+  depends_on = [module.compliance_lambda]
 }
