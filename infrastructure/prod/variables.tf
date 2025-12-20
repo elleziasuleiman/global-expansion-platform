@@ -99,3 +99,9 @@ variable "lambda_runtime" {
     error_message = "Only modern LTS versions of Node.js (20.x or 22.x) are supported."
   }
 }
+
+variable "compliance_agent_zip" {
+  description = "Path to the compliance agent Lambda zip artifact."
+  type        = string
+  default     = "../../services/compliance-agent/build/handler.zip"
+}
