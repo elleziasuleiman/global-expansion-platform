@@ -1,0 +1,36 @@
+name: "Terraform Validation"
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  terraform-checks:
+    name: "Terraform Lint & Validate"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.5"
+
+      - name: Terraform Format Check
+        run: terraform fmt -check 
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+        working-directory: ./infrastructure/prod
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ./infrastructure/prod
+
+      - name: Security Scan (Checkov)
+        uses: bridgecrewio/checkov-action@master
+        with:
+          framework: terraform
+          soft_fail: false
