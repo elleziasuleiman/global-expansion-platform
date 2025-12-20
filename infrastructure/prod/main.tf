@@ -18,6 +18,42 @@ module "lambda_role" {
   tags               = var.tags
 }
 
+data "aws_caller_identity" "current" {}
+
+locals {
+  lambda_env_kms_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid = "Allow administration by account root",
+        Effect = "Allow",
+        Principal = { AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root" },
+        Action = "kms:*",
+        Resource = "*"
+      },
+      {
+        Sid = "Allow lambda use",
+        Effect = "Allow",
+        Principal = { AWS = module.lambda_role.role_arn },
+        Action = ["kms:Encrypt","kms:Decrypt","kms:GenerateDataKey*","kms:DescribeKey"],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_kms_key" "lambda_env" {
+  description             = "KMS key for encrypting Lambda environment variables (global)"
+  deletion_window_in_days = 30
+  enable_key_rotation     = true
+  policy                  = local.lambda_env_kms_policy
+}
+
+resource "aws_kms_alias" "lambda_env_alias" {
+  name          = "alias/gep-lambda-env"
+  target_key_id = aws_kms_key.lambda_env.key_id
+}
+
 module "app_lambda" {
   source        = "../modules/lambda-function"
   function_name = var.lambda_name
@@ -25,6 +61,7 @@ module "app_lambda" {
   handler       = var.lambda_handler
   runtime       = var.lambda_runtime
   role_arn      = module.lambda_role.role_arn
+  environment_kms_key_arn = aws_kms_key.lambda_env.arn
   log_retention_days = var.log_retention_days
   environment = {
     LOG_FORMAT = "JSON"
