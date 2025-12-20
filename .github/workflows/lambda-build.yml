@@ -2,7 +2,7 @@ name: "Lambda Build Validation"
 
 on:
   push:
-    branches: [ feature/base-gep-foundation]
+    branches: [ main ]
   pull_request:
 
 jobs:
